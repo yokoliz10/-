@@ -1,0 +1,16 @@
+{
+  "name": "GemiLi 乐可乐可",
+  "short_name": "GemiLi",
+  "display": "standalone",
+  "orientation": "landscape",
+  "start_url": "./index.html",
+  "background_color": "#87CEEB",
+  "theme_color": "#87CEEB",
+  "icons": [
+    {
+      "src": "https://api.iconify.design/noto:smiling-face-with-smiling-eyes.svg", 
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
