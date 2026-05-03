@@ -1,19 +1,113 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-  <title>
-    Game Boilerplate
-  </title>
+  <meta charset="UTF-8">
+  <title>GemiLi 乐可乐可</title>
 
+  <!-- PWA 核心帅印 -->
+  <link rel="manifest" href="./manifest.json">
+  <!-- 手机沉浸式全屏 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  
   <link rel="stylesheet" type="text/css" href="css/style.css">
+  
+  <style>
+    body, html { margin: 0; padding: 0; overflow: hidden; touch-action: none; background: #87CEEB; }
+    /* 军师特制：超大启动按钮，破解苹果重力锁 */
+    #gemi-start-btn {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      padding: 20px 40px; font-size: 22px; background: #FFCC00; color: #333;
+      border: 4px solid #fff; border-radius: 50px; font-weight: bold;
+      z-index: 99999; box-shadow: 0 10px 25px rgba(0,0,0,0.5); cursor: pointer;
+    }
+  </style>
 </head>
 <body>
 
-  <div id="game-cont">
-    
-  </div>
-  
+  <!-- 霸气启动按钮 -->
+  <button id="gemi-start-btn">点击开启重力模式</button>
+
+  <!-- 敌军的原版游戏容器，原封不动 -->
+  <div id="game-cont"></div>
   <script src="dist/vendor.bundle.js"></script>
   <script src="dist/bundle.js"></script>
+
+  <!-- ⛺ PWA 后勤兵 -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    }
+  </script>
+
+  <!-- 🚀 军师的“外挂”核心代码 🚀 -->
+  <script>
+    const startBtn = document.getElementById('gemi-start-btn');
+    let currentKey = null;
+
+    // 绝密魔法：欺骗游戏，假装有人按下了实体键盘
+    function triggerKey(type, keyCode) {
+        const e = new Event(type, { bubbles: true, cancelable: true });
+        e.keyCode = keyCode;
+        e.which = keyCode;
+        window.dispatchEvent(e);
+        document.dispatchEvent(e);
+    }
+
+    // 拦截手机陀螺仪，转换为键盘左右键 (37:左, 39:右)
+    function handleOrientation(event) {
+        const tilt = event.gamma; // 左右倾斜角度
+        
+        if (tilt < -15 && currentKey !== 37) {
+            // 向左倾斜超过15度 -> 模拟按下左键
+            if(currentKey) triggerKey('keyup', currentKey);
+            triggerKey('keydown', 37);
+            currentKey = 37;
+        } else if (tilt > 15 && currentKey !== 39) {
+            // 向右倾斜超过15度 -> 模拟按下右键
+            if(currentKey) triggerKey('keyup', currentKey);
+            triggerKey('keydown', 39);
+            currentKey = 39;
+        } else if (tilt >= -15 && tilt <= 15 && currentKey !== null) {
+            // 手机放平 -> 模拟松开按键
+            triggerKey('keyup', currentKey);
+            currentKey = null;
+        }
+    }
+
+    // 拦截全屏触摸，转换为键盘跳跃键 (38:上, 32:空格)
+    document.addEventListener('touchstart', (e) => {
+        // 防止点到按钮时误触发跳跃
+        if(e.target.id === 'gemi-start-btn') return; 
+        e.preventDefault();
+        triggerKey('keydown', 38);
+        triggerKey('keydown', 32);
+    }, { passive: false });
+    
+    document.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        triggerKey('keyup', 38);
+        triggerKey('keyup', 32);
+    });
+
+    // 点击按钮，破除系统权限结界
+    startBtn.addEventListener('click', () => {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            // 苹果 iOS 13+ 需要主动请求权限
+            DeviceOrientationEvent.requestPermission().then(permissionState => {
+                if (permissionState === 'granted') {
+                    window.addEventListener('deviceorientation', handleOrientation);
+                    startBtn.style.display = 'none';
+                } else {
+                    alert('主公，没重力权限它动不了啊！');
+                }
+            }).catch(console.error);
+        } else {
+            // 安卓机或老版苹果，直接启动
+            window.addEventListener('deviceorientation', handleOrientation);
+            startBtn.style.display = 'none';
+        }
+    });
+  </script>
 </body>
 </html>
